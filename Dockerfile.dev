@@ -1,0 +1,62 @@
+# Dockerfile.dev para invoices_service
+
+FROM ruby:3.2.8-bullseye
+
+# Instalación de dependencias del sistema
+RUN apt-get clean && apt-get update --allow-insecure-repositories || true && \
+  apt-get install -y --no-install-recommends \
+  build-essential \
+  unzip \
+  libaio1 \
+  libnss3 \
+  libssl-dev \
+  zlib1g-dev \
+  libxml2-dev \
+  libxslt1-dev \
+  gnupg2 \
+  ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Crear directorio para Oracle Instant Client
+RUN mkdir -p /opt/oracle
+
+# Copiar los zips del cliente Oracle
+COPY instantclient-basiclite-linux.x64-23.26.0.0.0.zip /opt/oracle/
+COPY instantclient-sdk-linux.x64-23.26.0.0.0.zip /opt/oracle/
+
+# Descomprimir Oracle Instant Client
+RUN cd /opt/oracle && \
+  unzip -q -o instantclient-basiclite-linux.x64-23.26.0.0.0.zip && \
+  unzip -q -o instantclient-sdk-linux.x64-23.26.0.0.0.zip && \
+  rm -f *.zip
+
+# Variables de entorno para Oracle
+ENV ORACLE_HOME=/opt/oracle/instantclient_23_26
+ENV LD_LIBRARY_PATH=$ORACLE_HOME
+ENV PATH=$ORACLE_HOME:$PATH
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copiar los Gemfiles primero
+COPY Gemfile* ./
+
+# Instalar Bundler
+RUN gem install bundler -v 2.7.2
+
+# Instalar dependencias Ruby
+RUN bundle install
+RUN rails generate rspec:install
+
+# Copiar el resto del proyecto
+COPY . .
+
+# Exponer puerto del servicio
+EXPOSE 3000
+
+RUN rm -f tmp/pids/server.pid
+
+ENV NLS_LANG=AMERICAN_AMERICA.AL32UTF8
+
+# Comando por defecto
+CMD ["rails", "server", "-b", "0.0.0.0", "-p", "3001"]
