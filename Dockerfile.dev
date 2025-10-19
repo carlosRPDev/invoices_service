@@ -46,7 +46,6 @@ RUN gem install bundler -v 2.7.2
 
 # Instalar dependencias Ruby
 RUN bundle install
-RUN rails generate rspec:install
 
 # Copiar el resto del proyecto
 COPY . .
