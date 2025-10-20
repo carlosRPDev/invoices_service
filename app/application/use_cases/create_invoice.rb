@@ -28,7 +28,14 @@ module UseCases
         event_message = "Error al crear factura: #{e.message} (params: #{params})"
         raise e
       ensure
-        @audit_service.log(event_message) if event_message
+        if event_message
+          @audit_service.log(
+            event_message,
+            action: record ? "CREATE_INVOICE" : "ERROR_CREATE_INVOICE",
+            detail: { params: params, invoice_id: record&.id },
+            state: record ? "OK" : "ERROR"
+          )
+        end
       end
     end
   end

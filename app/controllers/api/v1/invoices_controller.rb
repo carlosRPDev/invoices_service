@@ -33,11 +33,7 @@ module Api
       private
 
       def invoice_params
-        permitted = params.permit(:client_id, :total, :issued_at)
-        if params[:invoice].present?
-          permitted = params.require(:invoice).permit(:client_id, :total, :issued_at)
-        end
-        permitted
+        params.require(:invoice).permit(:client_id, :total, :issued_at)
       end
     end
   end
