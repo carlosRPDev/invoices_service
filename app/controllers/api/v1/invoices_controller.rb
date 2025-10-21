@@ -9,9 +9,12 @@ module Api
         )
 
         invoice = use_case.call(invoice_params)
-        render json: { id: invoice.id, message: "Factura creada correctamente" }, status: :created
+        render_success(data: { id: invoice.id, message: "Factura creada correctamente" }, status: :created)
+      rescue ActiveRecord::RecordInvalid => e
+        render_error(message: "Datos inválidos: #{e.message}")
       rescue => e
-        render json: { error: e.message }, status: :unprocessable_entity
+        Rails.logger.error("[Invoices] Error al crear factura: #{e.message}")
+        render_error(message: "Error al crear factura", status: :internal_server_error)
       end
 
       def show
@@ -20,7 +23,7 @@ module Api
         if invoice
           render json: invoice
         else
-          render json: { error: "Factura no encontrada" }, status: :not_found
+          render_not_found("Factura")
         end
       end
 
